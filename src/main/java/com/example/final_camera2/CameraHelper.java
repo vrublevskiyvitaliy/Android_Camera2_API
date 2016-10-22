@@ -12,13 +12,12 @@ public class CameraHelper {
     public String mCameraID;
     Context mContext;
 
-
     CameraHelper(Context mContext) {
         this.mContext = mContext;
     }
 
     void getImage() {
-        Log.e(TAG, "In getImage()");
+        Log.i(TAG, "In getImage()");
         setManager();
         setCameraID();
 
