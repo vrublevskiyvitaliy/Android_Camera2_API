@@ -16,7 +16,7 @@ public class MainActivity extends AppCompatActivity {
         takePictureButton = (Button) findViewById(R.id.btn_get_photo);
         assert takePictureButton != null;
 
-        cameraHelper = new CameraHelper();
+        cameraHelper = new CameraHelper(this);
 
         takePictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
