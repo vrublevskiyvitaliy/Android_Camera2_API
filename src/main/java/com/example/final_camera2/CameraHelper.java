@@ -5,27 +5,35 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.util.Log;
+import android.view.WindowManager;
+import android.graphics.SurfaceTexture;
 
 public class CameraHelper {
     private static final String TAG = "Camera Helper";
     public CameraManager mCameraManager;
     public String mCameraID;
     Context mContext;
+    CameraAPI api;
+    SurfaceTexture mSurfaceTexture;
 
     CameraHelper(Context mContext) {
         this.mContext = mContext;
 
         setManager();
         setCameraID();
-        CameraAPI api = new CameraAPI(mCameraManager, mCameraID);
+        mSurfaceTexture = new SurfaceTexture(10);
+        api = new CameraAPI(mCameraManager, mCameraID, mSurfaceTexture);
         api.openCamera();
-
     }
 
     void getImage() {
         Log.i(TAG, "In getImage()");
-
-
+        WindowManager windowManager = (WindowManager) mContext
+                .getSystemService(Context.WINDOW_SERVICE);
+        int rotation = windowManager.getDefaultDisplay().getRotation();
+        //todo fix rotation, make it dynamic
+        rotation = 2;
+        api.takePicture(rotation);
     }
 
     void setManager()
