@@ -14,12 +14,17 @@ public class CameraHelper {
 
     CameraHelper(Context mContext) {
         this.mContext = mContext;
+
+        setManager();
+        setCameraID();
+        CameraAPI api = new CameraAPI(mCameraManager, mCameraID);
+        api.openCamera();
+
     }
 
     void getImage() {
         Log.i(TAG, "In getImage()");
-        setManager();
-        setCameraID();
+
 
     }
 
