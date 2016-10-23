@@ -114,8 +114,10 @@ public class CameraAPI {
                 width = jpegSizes[0].getWidth();
                 height = jpegSizes[0].getHeight();
             }
-            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 1);
+            ImageReader reader = ImageReader.newInstance(width, height, ImageFormat.JPEG, 3);
             List<Surface> outputSurfaces = new ArrayList<Surface>(2);
+            final ArrayList<Image> images = new ArrayList<>(3);
+
             outputSurfaces.add(reader.getSurface());
             outputSurfaces.add(new Surface(mSurfaceTexture));
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
@@ -130,36 +132,10 @@ public class CameraAPI {
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
-                    Image image = null;
-                    try {
-                        image = reader.acquireLatestImage();
-                        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                        byte[] bytes = new byte[buffer.capacity()];
-                        buffer.get(bytes);
-                        save(bytes);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } finally {
-                        if (image != null) {
-                            image.close();
-                        }
-                    }
+                    Image image = reader.acquireLatestImage();
+                    images.add(image);
                 }
-                private void save(byte[] bytes) throws IOException {
-                    OutputStream output = null;
-                    try {
-                        File file = new File(Environment.getExternalStorageDirectory()+"/len" + number  +".jpg");
-                        number += 1;
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
-                    }
-                }
+
             };
             reader.setOnImageAvailableListener(readerListener, null);
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
@@ -191,6 +167,34 @@ public class CameraAPI {
                 @Override
                 public void onClosed(@NonNull CameraCaptureSession session) {
                     Log.i(TAG, "Session is closed!");
+                    try {
+                        save(images.get(0));
+                        images.get(0).close();
+                        save(images.get(1));
+                        images.get(1).close();
+                        save(images.get(2));
+                        images.get(2).close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+                private void save(Image image) throws IOException {
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    byte[] bytes = new byte[buffer.capacity()];
+                    buffer.get(bytes);
+                    OutputStream output = null;
+                    try {
+                        File file = new File(Environment.getExternalStorageDirectory()+"/len" + number  +".jpg");
+                        number += 1;
+                        output = new FileOutputStream(file);
+                        output.write(bytes);
+                    } finally {
+                        if (null != output) {
+                            output.close();
+                        }
+                    }
                 }
             }, null);
         } catch (CameraAccessException e) {
