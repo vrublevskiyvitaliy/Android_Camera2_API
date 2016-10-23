@@ -125,7 +125,7 @@ public class CameraAPI {
 
             captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            final File file = new File(Environment.getExternalStorageDirectory()+"/len" + number  +".jpg");
+            //final File file = new File(Environment.getExternalStorageDirectory()+"/len" + number  +".jpg");
             number += 1;
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
@@ -150,6 +150,8 @@ public class CameraAPI {
                 private void save(byte[] bytes) throws IOException {
                     OutputStream output = null;
                     try {
+                        File file = new File(Environment.getExternalStorageDirectory()+"/len" + number  +".jpg");
+                        number += 1;
                         output = new FileOutputStream(file);
                         output.write(bytes);
                     } finally {
@@ -164,7 +166,8 @@ public class CameraAPI {
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    Log.i(TAG, "Saved:" + file);
+                    Log.i(TAG, "Saved:");
+                    //Log.i(TAG, "Saved:" + file);
                 }
             };
             mCameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
@@ -172,12 +175,22 @@ public class CameraAPI {
                 public void onConfigured(CameraCaptureSession session) {
                     try {
                         session.capture(captureBuilder.build(), captureListener, null);
+                        captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, 270);
+                        session.capture(captureBuilder.build(), captureListener, null);
+                        captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, 0);
+                        session.capture(captureBuilder.build(), captureListener, null);
+
+                        session.close();
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
                 }
                 @Override
                 public void onConfigureFailed(CameraCaptureSession session) {
+                }
+                @Override
+                public void onClosed(@NonNull CameraCaptureSession session) {
+                    Log.i(TAG, "Session is closed!");
                 }
             }, null);
         } catch (CameraAccessException e) {
