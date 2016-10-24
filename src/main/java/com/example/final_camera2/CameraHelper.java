@@ -10,6 +10,7 @@ import android.graphics.SurfaceTexture;
 
 public class CameraHelper {
     private static final String TAG = "Camera Helper";
+
     public CameraManager mCameraManager;
     public String mCameraID;
     Context mContext;
@@ -18,7 +19,6 @@ public class CameraHelper {
 
     CameraHelper(Context mContext) {
         this.mContext = mContext;
-
         setManager();
         setCameraID();
         mSurfaceTexture = new SurfaceTexture(10);
@@ -33,7 +33,11 @@ public class CameraHelper {
         int rotation = windowManager.getDefaultDisplay().getRotation();
         //todo fix rotation, make it dynamic
         rotation = 2;
-        api.takePicture(rotation);
+        float startFocus = 0.7f;
+        float endFocus = 1f;
+        float stepFocus = 0.1f;
+
+        api.takePicture(rotation, startFocus, endFocus, stepFocus);
     }
 
     void setManager()
