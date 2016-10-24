@@ -31,8 +31,6 @@ public class CameraHelper {
         WindowManager windowManager = (WindowManager) mContext
                 .getSystemService(Context.WINDOW_SERVICE);
         int rotation = windowManager.getDefaultDisplay().getRotation();
-        //todo fix rotation, make it dynamic
-        rotation = 2;
         float startFocus = 0.7f;
         float endFocus = 1f;
         float stepFocus = 0.1f;
