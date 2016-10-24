@@ -2,18 +2,24 @@ package com.example.final_camera2;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private CameraHelper cameraHelper;
     private Button takePictureButton;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
+    private Handler mBackgroundHandler;
+    private HandlerThread mBackgroundThread;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,5 +56,39 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         }
+    }
+
+    protected void startBackgroundThread() {
+        mBackgroundThread = new HandlerThread("Camera Background");
+        mBackgroundThread.start();
+        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+        cameraHelper.setBackgroundHandler(mBackgroundHandler);
+    }
+
+    protected void stopBackgroundThread() {
+        mBackgroundThread.quitSafely();
+        try {
+            mBackgroundThread.join();
+            mBackgroundThread = null;
+            mBackgroundHandler = null;
+            cameraHelper.setBackgroundHandler(null);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.e(TAG, "onResume");
+        startBackgroundThread();
+        cameraHelper.openCamera();
+    }
+    @Override
+    protected void onPause() {
+        Log.e(TAG, "onPause");
+        cameraHelper.closeCamera();
+        stopBackgroundThread();
+        super.onPause();
     }
 }

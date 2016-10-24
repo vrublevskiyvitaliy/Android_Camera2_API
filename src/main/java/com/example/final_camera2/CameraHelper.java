@@ -4,6 +4,7 @@ import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.os.Handler;
 import android.util.Log;
 import android.view.WindowManager;
 import android.graphics.SurfaceTexture;
@@ -23,7 +24,6 @@ public class CameraHelper {
         setCameraID();
         mSurfaceTexture = new SurfaceTexture(10);
         api = new CameraAPI(mCameraManager, mCameraID, mSurfaceTexture);
-        api.openCamera();
     }
 
     void getImage() {
@@ -90,4 +90,16 @@ public class CameraHelper {
         return isFrontal;
     }
 
+    public void openCamera() {
+        api.openCamera();
+    }
+
+    public void closeCamera() {
+        api.closeCamera();
+    }
+
+    public void setBackgroundHandler(Handler handler)
+    {
+        api.setBackgroundHandler(handler);
+    }
 }

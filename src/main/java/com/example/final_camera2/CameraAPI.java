@@ -14,6 +14,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Environment;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.util.Size;
@@ -40,6 +41,12 @@ public class CameraAPI {
     private Size imageDimension;
     protected CaptureRequest.Builder captureRequestBuilder;
     protected CameraCaptureSession cameraCaptureSessions;
+    private Handler mBackgroundHandler = null;
+
+    public void setBackgroundHandler(Handler backgroundHandler)
+    {
+        mBackgroundHandler = backgroundHandler;
+    }
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
@@ -147,7 +154,7 @@ public class CameraAPI {
                     images.add(image);
                 }
             };
-            reader.setOnImageAvailableListener(readerListener, null);
+            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
             final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
@@ -164,12 +171,12 @@ public class CameraAPI {
                         {
                             focus = startFocus + i * stepFocus;
                             captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
-                            session.capture(captureBuilder.build(), captureListener, null);
+                            session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
                         }
 
                         focus = endFocus;
                         captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
-                        session.capture(captureBuilder.build(), captureListener, null);
+                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
 
                         session.close();
                     } catch (CameraAccessException e) {
@@ -249,9 +256,16 @@ public class CameraAPI {
         }
         captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         try {
-            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, null);
+            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void closeCamera() {
+        if (null != mCameraDevice) {
+            mCameraDevice.close();
+            mCameraDevice = null;
         }
     }
 }
