@@ -2,6 +2,7 @@ package com.example.final_camera2;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -9,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -20,16 +22,21 @@ public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
+    public static TextureView textureView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        textureView = (TextureView) findViewById(R.id.texture_for_preview);
+        assert textureView != null;
         takePictureButton = (Button) findViewById(R.id.btn_get_photo);
         assert takePictureButton != null;
+        textureView.setSurfaceTextureListener(textureListener);
 
         cameraHelper = new CameraHelper(this);
+        cameraHelper.setTextureView(textureView);
 
         // Add permission for camera and let user grant the permission
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED &&
@@ -45,6 +52,23 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
+        @Override
+        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+            cameraHelper.openCamera();
+        }
+        @Override
+        public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+        }
+        @Override
+        public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            return false;
+        }
+        @Override
+        public void onSurfaceTextureUpdated(SurfaceTexture surface) {
+        }
+    };
 
 
     @Override
@@ -82,12 +106,15 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         Log.e(TAG, "onResume");
         startBackgroundThread();
-        cameraHelper.openCamera();
+        if (textureView.isAvailable()) {
+            cameraHelper.openCamera();
+        } else {
+            textureView.setSurfaceTextureListener(textureListener);
+        }
     }
     @Override
     protected void onPause() {
         Log.e(TAG, "onPause");
-        cameraHelper.closeCamera();
         stopBackgroundThread();
         super.onPause();
     }

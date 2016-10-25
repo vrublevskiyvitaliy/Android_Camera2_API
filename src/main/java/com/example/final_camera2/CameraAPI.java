@@ -20,8 +20,8 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
+import android.view.TextureView;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -37,15 +37,20 @@ public class CameraAPI {
     private String mCameraID    = null;
     private CameraDevice mCameraDevice = null;
     private int number = 1;
-    SurfaceTexture mSurfaceTexture = null;
     private Size imageDimension;
     protected CaptureRequest.Builder captureRequestBuilder;
     protected CameraCaptureSession cameraCaptureSessions;
     private Handler mBackgroundHandler = null;
+    private TextureView mTextureView;
 
     public void setBackgroundHandler(Handler backgroundHandler)
     {
         mBackgroundHandler = backgroundHandler;
+    }
+
+    public void setTextureView(TextureView textureView)
+    {
+        mTextureView = textureView;
     }
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -56,11 +61,9 @@ public class CameraAPI {
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
-    public CameraAPI(CameraManager cameraManager, String cameraID, SurfaceTexture surfaceTexture) {
+    public CameraAPI(CameraManager cameraManager, String cameraID) {
         mCameraManager  = cameraManager;
         mCameraID       = cameraID;
-        mSurfaceTexture = surfaceTexture;
-
 
         try {
             CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraID);
@@ -89,7 +92,7 @@ public class CameraAPI {
         public void onOpened(CameraDevice camera) {
             Log.i(TAG, "onOpened");
             mCameraDevice = camera;
-            createFictiveCameraPreview();
+            createCameraPreview();
         }
         @Override
         public void onDisconnected(CameraDevice camera) {
@@ -177,7 +180,6 @@ public class CameraAPI {
                         focus = endFocus;
                         captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
                         session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
-
                         session.close();
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
@@ -186,9 +188,9 @@ public class CameraAPI {
                 @Override
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
-                @Override
-                public void onClosed(@NonNull CameraCaptureSession session) {
-                    Log.i(TAG, "Session is closed!");
+
+                public void saveImages()
+                {
                     try {
 
                         for (int i = 0; i < numberOfPhotos; i++)
@@ -199,6 +201,12 @@ public class CameraAPI {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                }
+                @Override
+                public void onClosed(@NonNull CameraCaptureSession session) {
+                    Log.i(TAG, "Session is closed!");
+                    saveImages();
+                    createCameraPreview();
                 }
 
                 private void save(Image image) throws IOException {
@@ -224,11 +232,12 @@ public class CameraAPI {
     }
 
 
-    public void createFictiveCameraPreview() {
+    protected void createCameraPreview() {
         try {
-            assert mSurfaceTexture != null;
-            mSurfaceTexture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
-            Surface surface = new Surface(mSurfaceTexture);
+            SurfaceTexture texture = mTextureView.getSurfaceTexture();
+            assert texture != null;
+            texture.setDefaultBufferSize(imageDimension.getWidth(), imageDimension.getHeight());
+            Surface surface = new Surface(texture);
             captureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(surface);
             mCameraDevice.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback(){
@@ -244,12 +253,14 @@ public class CameraAPI {
                 }
                 @Override
                 public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                    Log.e(TAG, "Configuration failed");
                 }
             }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
+
     protected void updatePreview() {
         if(null == mCameraDevice) {
             Log.e(TAG, "updatePreview error, return");
