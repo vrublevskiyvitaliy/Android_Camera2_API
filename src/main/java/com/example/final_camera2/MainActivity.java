@@ -14,6 +14,8 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import android.widget.TextView;
+import android.widget.SeekBar;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -23,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     public static TextureView textureView;
+    private TextView mTextValue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +54,32 @@ public class MainActivity extends AppCompatActivity {
                 cameraHelper.getImage();
             }
         });
+
+        mTextValue = (TextView)findViewById(R.id.textView2);
+        mTextValue.setText("0");
+
+        final SeekBar seekbar = (SeekBar)findViewById(R.id.seekBar_focus_distance);
+        seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress,
+                                          boolean fromUser) {
+                // TODO Auto-generated method stub
+                mTextValue.setText(String.valueOf(seekBar.getProgress()));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                // TODO Auto-generated method stub
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                // TODO Auto-generated method stub
+                mTextValue.setText(String.valueOf(seekBar.getProgress()));
+            }
+        });
+
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
