@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
                 // TODO Auto-generated method stub
-                mTextValue.setText(String.valueOf(seekBar.getProgress()));
+                mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
             }
 
             @Override
@@ -76,7 +76,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
                 // TODO Auto-generated method stub
-                mTextValue.setText(String.valueOf(seekBar.getProgress()));
+                mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
+            }
+
+            private float getCurrentProgress(SeekBar seekBar)
+            {
+                final float MIN_FOCUS_DISTANCE = 0.05f;
+                final float MAX_FOCUS_DISTANCE = 1.f;
+                final float STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
+
+                int progress = seekBar.getProgress();
+
+                float correctProgress = MIN_FOCUS_DISTANCE + STEP * progress;
+                return correctProgress;
             }
         });
 
