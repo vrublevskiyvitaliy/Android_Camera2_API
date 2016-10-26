@@ -36,6 +36,11 @@ public class CameraHelper {
         api.takePicture(rotation, startFocus, endFocus, stepFocus);
     }
 
+    void getImageWithFocus(float focus) {
+        Log.i(TAG, "In getImageWithFocus()");
+        Log.i(TAG, focus + "");
+    }
+
     void setManager()
     {
         mCameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);

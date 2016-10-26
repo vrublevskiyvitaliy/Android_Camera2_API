@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private CameraHelper cameraHelper;
     private Button takePictureButton;
+    private Button takePictureWithFocusButton;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
@@ -41,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
         assert textureView != null;
         takePictureButton = (Button) findViewById(R.id.btn_get_photo);
         assert takePictureButton != null;
+        takePictureWithFocusButton = (Button) findViewById(R.id.btn_get_photo_focus);
+        assert takePictureWithFocusButton != null;
+
         textureView.setSurfaceTextureListener(textureListener);
 
         cameraHelper = new CameraHelper(this);
@@ -60,6 +64,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        takePictureWithFocusButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cameraHelper.getImageWithFocus(getCurrentProgress(mSeekbar));
+            }
+        });
         mTextValue = (TextView)findViewById(R.id.textView2);
         mTextValue.setText(String.format("%.2f", MIN_FOCUS_DISTANCE));
 
