@@ -14,15 +14,24 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
+import android.widget.TextView;
+import android.widget.SeekBar;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private CameraHelper cameraHelper;
     private Button takePictureButton;
+    private Button takePictureWithFocusButton;
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     public static TextureView textureView;
+    private TextView mTextValue;
+    private SeekBar mSeekbar;
+    // Focus routine
+    final float MIN_FOCUS_DISTANCE = 0.05f;
+    final float MAX_FOCUS_DISTANCE = 1.f;
+    final float FOCUS_STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +42,9 @@ public class MainActivity extends AppCompatActivity {
         assert textureView != null;
         takePictureButton = (Button) findViewById(R.id.btn_get_photo);
         assert takePictureButton != null;
+        takePictureWithFocusButton = (Button) findViewById(R.id.btn_get_photo_focus);
+        assert takePictureWithFocusButton != null;
+
         textureView.setSurfaceTextureListener(textureListener);
 
         cameraHelper = new CameraHelper(this);
@@ -51,6 +63,42 @@ public class MainActivity extends AppCompatActivity {
                 cameraHelper.getImage();
             }
         });
+
+        takePictureWithFocusButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                cameraHelper.getImageWithFocus(getCurrentProgress(mSeekbar));
+            }
+        });
+        mTextValue = (TextView)findViewById(R.id.textView2);
+        mTextValue.setText(String.format("%.2f", MIN_FOCUS_DISTANCE));
+
+        mSeekbar = (SeekBar)findViewById(R.id.seekBar_focus_distance);
+        mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress,
+                                          boolean fromUser) {
+                mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
+            }
+        });
+    }
+
+    private float getCurrentProgress(SeekBar seekBar)
+    {
+        int progress = seekBar.getProgress();
+
+        float correctProgress = MIN_FOCUS_DISTANCE + FOCUS_STEP * progress;
+        return correctProgress;
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
