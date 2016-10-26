@@ -6,8 +6,8 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.os.Handler;
 import android.util.Log;
+import android.view.TextureView;
 import android.view.WindowManager;
-import android.graphics.SurfaceTexture;
 
 public class CameraHelper {
     private static final String TAG = "Camera Helper";
@@ -16,14 +16,12 @@ public class CameraHelper {
     public String mCameraID;
     Context mContext;
     CameraAPI api;
-    SurfaceTexture mSurfaceTexture;
 
     CameraHelper(Context mContext) {
         this.mContext = mContext;
         setManager();
         setCameraID();
-        mSurfaceTexture = new SurfaceTexture(10);
-        api = new CameraAPI(mCameraManager, mCameraID, mSurfaceTexture);
+        api = new CameraAPI(mCameraManager, mCameraID);
     }
 
     void getImage() {
@@ -99,5 +97,10 @@ public class CameraHelper {
     public void setBackgroundHandler(Handler handler)
     {
         api.setBackgroundHandler(handler);
+    }
+
+    public void setTextureView(TextureView textureView)
+    {
+        api.setTextureView(textureView);
     }
 }
