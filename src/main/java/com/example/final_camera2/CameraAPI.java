@@ -231,6 +231,91 @@ public class CameraAPI {
         }
     }
 
+    public void takePictureWithFocus(int rotation, final float focus) {
+        if(null == mCameraDevice) {
+            Log.e(TAG, "cameraDevice is null");
+            return;
+        }
+        try {
+            Size size = getMaxSize();
+            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, 1);
+
+            List<Surface> outputSurfaces = new ArrayList<Surface>(1);
+            final ArrayList<Image> images = new ArrayList<>(1);
+
+            outputSurfaces.add(reader.getSurface());
+            final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            captureBuilder.addTarget(reader.getSurface());
+
+            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+            captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
+
+            ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
+                @Override
+                public void onImageAvailable(ImageReader reader) {
+                    Image image = reader.acquireLatestImage();
+                    images.add(image);
+                }
+            };
+            reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
+            final CameraCaptureSession.CaptureCallback captureListener = new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                    super.onCaptureCompleted(session, request, result);
+                    Log.i(TAG, "Saved:");
+                }
+            };
+            mCameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
+                @Override
+                public void onConfigured(CameraCaptureSession session) {
+                    try {
+                        session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
+                        session.close();
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+                @Override
+                public void onConfigureFailed(CameraCaptureSession session) {
+                }
+
+                public void saveImage()
+                {
+                    try {
+                        save(images.get(0));
+                        images.get(0).close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                @Override
+                public void onClosed(@NonNull CameraCaptureSession session) {
+                    Log.i(TAG, "Session is closed!");
+                    saveImage();
+                    createCameraPreview();
+                }
+
+                private void save(Image image) throws IOException {
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    byte[] bytes = new byte[buffer.capacity()];
+                    buffer.get(bytes);
+                    OutputStream output = null;
+                    try {
+                        File file = new File(Environment.getExternalStorageDirectory()+"/focus" + number  +".jpg");
+                        output = new FileOutputStream(file);
+                        output.write(bytes);
+                    } finally {
+                        if (null != output) {
+                            output.close();
+                        }
+                    }
+                }
+            }, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
 
     protected void createCameraPreview() {
         try {

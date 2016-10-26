@@ -24,21 +24,27 @@ public class CameraHelper {
         api = new CameraAPI(mCameraManager, mCameraID);
     }
 
-    void getImage() {
-        Log.i(TAG, "In getImage()");
+    public int getRotation()
+    {
         WindowManager windowManager = (WindowManager) mContext
                 .getSystemService(Context.WINDOW_SERVICE);
         int rotation = windowManager.getDefaultDisplay().getRotation();
+        return rotation;
+    }
+
+    void getImage() {
+        Log.i(TAG, "In getImage()");
         float startFocus = 0.7f;
         float endFocus = 1f;
         float stepFocus = 0.1f;
 
-        api.takePicture(rotation, startFocus, endFocus, stepFocus);
+        api.takePicture(getRotation(), startFocus, endFocus, stepFocus);
     }
 
     void getImageWithFocus(float focus) {
         Log.i(TAG, "In getImageWithFocus()");
         Log.i(TAG, focus + "");
+        api.takePictureWithFocus(getRotation(), focus);
     }
 
     void setManager()
