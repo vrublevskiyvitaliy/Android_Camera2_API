@@ -26,6 +26,11 @@ public class MainActivity extends AppCompatActivity {
     private HandlerThread mBackgroundThread;
     public static TextureView textureView;
     private TextView mTextValue;
+    private SeekBar mSeekbar;
+    // Focus routine
+    final float MIN_FOCUS_DISTANCE = 0.05f;
+    final float MAX_FOCUS_DISTANCE = 1.f;
+    final float FOCUS_STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,42 +61,34 @@ public class MainActivity extends AppCompatActivity {
         });
 
         mTextValue = (TextView)findViewById(R.id.textView2);
-        mTextValue.setText("0");
+        mTextValue.setText(String.format("%.2f", MIN_FOCUS_DISTANCE));
 
-        final SeekBar seekbar = (SeekBar)findViewById(R.id.seekBar_focus_distance);
-        seekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+        mSeekbar = (SeekBar)findViewById(R.id.seekBar_focus_distance);
+        mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
 
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
-                // TODO Auto-generated method stub
                 mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
             }
 
             @Override
             public void onStartTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
             }
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                // TODO Auto-generated method stub
                 mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
             }
-
-            private float getCurrentProgress(SeekBar seekBar)
-            {
-                final float MIN_FOCUS_DISTANCE = 0.05f;
-                final float MAX_FOCUS_DISTANCE = 1.f;
-                final float STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
-
-                int progress = seekBar.getProgress();
-
-                float correctProgress = MIN_FOCUS_DISTANCE + STEP * progress;
-                return correctProgress;
-            }
         });
+    }
 
+    private float getCurrentProgress(SeekBar seekBar)
+    {
+        int progress = seekBar.getProgress();
+
+        float correctProgress = MIN_FOCUS_DISTANCE + FOCUS_STEP * progress;
+        return correctProgress;
     }
 
     TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
