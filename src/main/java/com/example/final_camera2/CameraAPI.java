@@ -42,7 +42,6 @@ public class CameraAPI {
     protected CameraCaptureSession cameraCaptureSessions;
     private Handler mBackgroundHandler = null;
     private TextureView mTextureView;
-    private float manualFocus;
 
     public void setBackgroundHandler(Handler backgroundHandler)
     {
@@ -348,7 +347,7 @@ public class CameraAPI {
     }
 
 
-    public void updatePreviewWithManualFocus() {
+    public void updatePreviewWithManualFocus(float focus) {
         if(null == mCameraDevice) {
             Log.e(TAG, "updatePreview error, return");
         }
@@ -356,7 +355,7 @@ public class CameraAPI {
             cameraCaptureSessions.stopRepeating();
 
             captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, manualFocus);
+            captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
 
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
         } catch (CameraAccessException e) {

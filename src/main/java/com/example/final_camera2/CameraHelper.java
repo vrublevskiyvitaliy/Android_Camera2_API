@@ -114,4 +114,8 @@ public class CameraHelper {
     {
         api.setTextureView(textureView);
     }
+
+    public void changePreviewFocus(float focus) {
+        api.updatePreviewWithManualFocus(focus);
+    }
 }

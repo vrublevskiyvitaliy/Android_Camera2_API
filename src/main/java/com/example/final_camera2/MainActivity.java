@@ -85,7 +85,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
-                mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
+                float focus = getCurrentProgress(seekBar);
+                mTextValue.setText(String.format("%.2f", focus));
+                cameraHelper.changePreviewFocus(focus);
             }
 
             @Override
@@ -94,7 +96,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
+                float focus = getCurrentProgress(seekBar);
+                mTextValue.setText(String.format("%.2f", focus));
+                cameraHelper.changePreviewFocus(focus);
             }
         });
     }
