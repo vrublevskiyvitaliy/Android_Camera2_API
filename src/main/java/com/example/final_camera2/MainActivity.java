@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         mTextValue = (TextView)findViewById(R.id.textView2);
-        mTextValue.setText(String.format("%.2f", MIN_FOCUS_DISTANCE));
+        mTextValue.setText("AUTO");
 
         mSeekbar = (SeekBar)findViewById(R.id.seekBar_focus_distance);
         mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
@@ -85,6 +85,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
+                processChange(seekBar);
+            }
+
+            private void processChange(SeekBar seekBar) {
                 float focus = getCurrentProgress(seekBar);
                 mTextValue.setText(String.format("%.2f", focus));
                 cameraHelper.changePreviewFocus(focus);
@@ -96,9 +100,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                float focus = getCurrentProgress(seekBar);
-                mTextValue.setText(String.format("%.2f", focus));
-                cameraHelper.changePreviewFocus(focus);
+                processChange(seekBar);
             }
         });
     }
