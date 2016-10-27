@@ -126,8 +126,6 @@ public class CameraAPI {
         return maxSize;
     }
 
-
-
     public void takePicture(int rotation, final float startFocus, final float endFocus, final float stepFocus) {
         if(null == mCameraDevice) {
             Log.e(TAG, "cameraDevice is null");
@@ -195,7 +193,8 @@ public class CameraAPI {
 
                         for (int i = 0; i < numberOfPhotos; i++)
                         {
-                            save(images.get(i));
+                            saveImage(images.get(i), "series" + number);
+                            number += 1;
                             images.get(i).close();
                         }
                     } catch (IOException e) {
@@ -209,25 +208,26 @@ public class CameraAPI {
                     createCameraPreview();
                 }
 
-                private void save(Image image) throws IOException {
-                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                    byte[] bytes = new byte[buffer.capacity()];
-                    buffer.get(bytes);
-                    OutputStream output = null;
-                    try {
-                        File file = new File(Environment.getExternalStorageDirectory()+"/len" + number  +".jpg");
-                        number += 1;
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
-                    }
-                }
+
             }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void saveImage(Image image, String name) throws IOException {
+        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+        byte[] bytes = new byte[buffer.capacity()];
+        buffer.get(bytes);
+        OutputStream output = null;
+        try {
+            File file = new File(Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
+            output = new FileOutputStream(file);
+            output.write(bytes);
+        } finally {
+            if (null != output) {
+                output.close();
+            }
         }
     }
 
@@ -254,8 +254,14 @@ public class CameraAPI {
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
-                    Image image = reader.acquireLatestImage();
-                    images.add(image);
+                    try {
+                        Image image = reader.acquireLatestImage();
+                        String name = "focusDist" + String.format("%.2f", focus);
+                        saveImage(image, name);
+                        image.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
@@ -280,36 +286,10 @@ public class CameraAPI {
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
 
-                public void saveImage()
-                {
-                    try {
-                        save(images.get(0));
-                        images.get(0).close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
                 @Override
                 public void onClosed(@NonNull CameraCaptureSession session) {
                     Log.i(TAG, "Session is closed!");
-                    saveImage();
                     createCameraPreview();
-                }
-
-                private void save(Image image) throws IOException {
-                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                    byte[] bytes = new byte[buffer.capacity()];
-                    buffer.get(bytes);
-                    OutputStream output = null;
-                    try {
-                        File file = new File(Environment.getExternalStorageDirectory()+"/focus" + number  +".jpg");
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
-                    }
                 }
             }, null);
         } catch (CameraAccessException e) {
