@@ -147,7 +147,7 @@ public class CameraAPI {
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
 
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
 
             number = 0;
@@ -250,7 +250,7 @@ public class CameraAPI {
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
 
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
             captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
             captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
 
@@ -279,6 +279,7 @@ public class CameraAPI {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     try {
+                        captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
                         session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
                         session.close();
                     } catch (CameraAccessException e) {
@@ -339,7 +340,7 @@ public class CameraAPI {
         try {
             cameraCaptureSessions.stopRepeating();
 
-            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);
             captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
 
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
