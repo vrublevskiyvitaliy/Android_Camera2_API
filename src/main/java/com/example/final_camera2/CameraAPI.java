@@ -42,6 +42,8 @@ public class CameraAPI {
     protected CameraCaptureSession cameraCaptureSessions;
     private Handler mBackgroundHandler = null;
     private TextureView mTextureView;
+    private float manualFocus;
+    private boolean useManualFocus;
 
     public void setBackgroundHandler(Handler backgroundHandler)
     {
@@ -64,6 +66,7 @@ public class CameraAPI {
     public CameraAPI(CameraManager cameraManager, String cameraID) {
         mCameraManager  = cameraManager;
         mCameraID       = cameraID;
+        useManualFocus = false;
 
         try {
             CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraID);
@@ -331,6 +334,8 @@ public class CameraAPI {
         if(null == mCameraDevice) {
             Log.e(TAG, "updatePreview error, return");
         }
+        manualFocus = focus;
+        useManualFocus = true;
         try {
             cameraCaptureSessions.stopRepeating();
 
@@ -344,6 +349,10 @@ public class CameraAPI {
     }
 
     protected void updatePreview() {
+        if (useManualFocus) {
+            updatePreviewWithManualFocus(manualFocus);
+            return;
+        }
         if(null == mCameraDevice) {
             Log.e(TAG, "updatePreview error, return");
         }

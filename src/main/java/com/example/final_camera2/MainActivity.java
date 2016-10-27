@@ -166,7 +166,6 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         Log.e(TAG, "onResume");
         startBackgroundThread();
-        mTextValue.setText("AUTO");
         if (textureView.isAvailable()) {
             cameraHelper.openCamera();
         } else {
