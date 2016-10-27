@@ -16,12 +16,20 @@
             android:layout_height="match_parent"
             android:layout_marginBottom="50dp"
             />
-        <SeekBar
-            android:layout_height="wrap_content"
-            android:layout_width="match_parent"
-            android:id="@+id/seekBar_focus_distance"
-            android:layout_alignParentTop="true"
-            />
+        <FrameLayout
+            android:layout_width="32dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_alignParentEnd="true">
+
+            <SeekBar
+                android:id="@+id/seekBar_focus_distance"
+                android:layout_width="300dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center"
+                android:rotation="270"/>
+
+        </FrameLayout>
 
     </RelativeLayout>
 
