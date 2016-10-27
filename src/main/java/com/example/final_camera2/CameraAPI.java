@@ -129,6 +129,14 @@ public class CameraAPI {
         return maxSize;
     }
 
+    public void prepareRequest(CaptureRequest.Builder captureBuilder, int rotation) {
+        captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        captureBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
+        captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+        captureBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON);
+        captureBuilder.set(CaptureRequest.JPEG_QUALITY, (byte)100);
+    }
+
     public void takePicture(int rotation, final float startFocus, final float endFocus, final float stepFocus) {
         if(null == mCameraDevice) {
             Log.e(TAG, "cameraDevice is null");
@@ -147,8 +155,7 @@ public class CameraAPI {
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
 
-            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+            prepareRequest(captureBuilder, rotation);
 
             number = 0;
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
@@ -250,9 +257,7 @@ public class CameraAPI {
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
 
-            captureBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
+            prepareRequest(captureBuilder, rotation);
 
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
@@ -339,8 +344,9 @@ public class CameraAPI {
         useManualFocus = true;
         try {
             cameraCaptureSessions.stopRepeating();
-
-            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_OFF);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
+            captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON);
             captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
 
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
