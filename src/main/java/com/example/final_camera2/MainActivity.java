@@ -67,6 +67,12 @@ public class MainActivity extends AppCompatActivity {
         takePictureWithFocusButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // check if focus was set manually
+                String text = mTextValue.getText().toString();
+                if (text.equals("AUTO")) {
+                    Toast.makeText(MainActivity.this, "Sorry! Set manual focus first", Toast.LENGTH_LONG).show();
+                    return;
+                }
                 cameraHelper.getImageWithFocus(getCurrentProgress(mSeekbar));
             }
         });
