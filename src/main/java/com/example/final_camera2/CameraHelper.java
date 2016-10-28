@@ -175,4 +175,17 @@ public class CameraHelper {
             e.printStackTrace();
         }
     }
+
+    public float getMinFocusForCamera(){
+        float focus = 0f;
+        try {
+            CameraCharacteristics characteristics
+                    = mCameraManager.getCameraCharacteristics(mCameraID);
+
+            focus = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return focus;
+    }
 }

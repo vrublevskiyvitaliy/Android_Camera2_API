@@ -29,9 +29,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView mTextValue;
     private SeekBar mSeekbar;
     // Focus routine
-    final float MIN_FOCUS_DISTANCE = 1f;
-    final float MAX_FOCUS_DISTANCE = 10.f;
-    final float FOCUS_STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
+    private float MIN_FOCUS_DISTANCE = 0f;
+    private float MAX_FOCUS_DISTANCE = 5.f;
+    private float FOCUS_STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 float startFocus = 1f;
                 float endFocus = 10f;
-                float stepFocus = 1f;
+                float stepFocus = 3f;
                 cameraHelper.getImage(startFocus, endFocus, stepFocus);
             }
         });
@@ -106,6 +106,8 @@ public class MainActivity extends AppCompatActivity {
                 processChange(seekBar);
             }
         });
+
+        MAX_FOCUS_DISTANCE = cameraHelper.getMinFocusForCamera();
     }
 
     private float getCurrentProgress(SeekBar seekBar)
