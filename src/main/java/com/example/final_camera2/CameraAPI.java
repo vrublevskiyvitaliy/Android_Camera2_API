@@ -133,7 +133,6 @@ public class CameraAPI {
         captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         captureBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
         captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-        captureBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON);
         captureBuilder.set(CaptureRequest.JPEG_QUALITY, (byte)100);
     }
 
@@ -170,7 +169,7 @@ public class CameraAPI {
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    Log.i(TAG, "Saved:");
+                    Log.i(TAG, "onCaptureCompleted.");
                 }
             };
             mCameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
@@ -226,11 +225,13 @@ public class CameraAPI {
     }
 
     private void saveImage(Image image, String name) throws IOException {
+        Log.i(TAG, "in saveImage()");
         ByteBuffer buffer = image.getPlanes()[0].getBuffer();
         byte[] bytes = new byte[buffer.capacity()];
         buffer.get(bytes);
         OutputStream output = null;
         try {
+            Log.i(TAG, "Saved in " + Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
             File file = new File(Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
             output = new FileOutputStream(file);
             output.write(bytes);
@@ -346,7 +347,6 @@ public class CameraAPI {
             cameraCaptureSessions.stopRepeating();
             captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
-            captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CameraMetadata.LENS_OPTICAL_STABILIZATION_MODE_ON);
             captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
 
             cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
