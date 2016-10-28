@@ -42,6 +42,8 @@ public class CameraAPI {
     protected CameraCaptureSession cameraCaptureSessions;
     private Handler mBackgroundHandler = null;
     private TextureView mTextureView;
+    private float manualFocus;
+    private boolean useManualFocus;
 
     public void setBackgroundHandler(Handler backgroundHandler)
     {
@@ -64,6 +66,7 @@ public class CameraAPI {
     public CameraAPI(CameraManager cameraManager, String cameraID) {
         mCameraManager  = cameraManager;
         mCameraID       = cameraID;
+        useManualFocus = false;
 
         try {
             CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraID);
@@ -126,7 +129,12 @@ public class CameraAPI {
         return maxSize;
     }
 
-
+    public void prepareRequest(CaptureRequest.Builder captureBuilder, int rotation) {
+        captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+        captureBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
+        captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+        captureBuilder.set(CaptureRequest.JPEG_QUALITY, (byte)100);
+    }
 
     public void takePicture(int rotation, final float startFocus, final float endFocus, final float stepFocus) {
         if(null == mCameraDevice) {
@@ -135,26 +143,33 @@ public class CameraAPI {
         }
         try {
             final int numberOfPhotos = (int) ((endFocus - startFocus) / stepFocus) + 1;
-
+            Log.d(TAG, "numberOfPhotos = " + numberOfPhotos);
             Size size = getMaxSize();
             ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, numberOfPhotos);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
-            final ArrayList<Image> images = new ArrayList<>(numberOfPhotos);
+            final ArrayList<Image> images = new ArrayList<Image>(numberOfPhotos);
 
             outputSurfaces.add(reader.getSurface());
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
 
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+            prepareRequest(captureBuilder, rotation);
 
             number = 0;
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
+                    Log.i(TAG, "recieved Image");
                     Image image = reader.acquireLatestImage();
                     images.add(image);
+                    try {
+                        saveImage(images.get(number), "series" + number);
+                        images.get(number).close();
+                        number += 1;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
@@ -162,7 +177,7 @@ public class CameraAPI {
                 @Override
                 public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
                     super.onCaptureCompleted(session, request, result);
-                    Log.i(TAG, "Saved:");
+                    Log.i(TAG, "onCaptureCompleted.");
                 }
             };
             mCameraDevice.createCaptureSession(outputSurfaces, new CameraCaptureSession.StateCallback() {
@@ -189,45 +204,32 @@ public class CameraAPI {
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
 
-                public void saveImages()
-                {
-                    try {
-
-                        for (int i = 0; i < numberOfPhotos; i++)
-                        {
-                            save(images.get(i));
-                            images.get(i).close();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
                 @Override
                 public void onClosed(@NonNull CameraCaptureSession session) {
                     Log.i(TAG, "Session is closed!");
-                    saveImages();
                     createCameraPreview();
-                }
-
-                private void save(Image image) throws IOException {
-                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                    byte[] bytes = new byte[buffer.capacity()];
-                    buffer.get(bytes);
-                    OutputStream output = null;
-                    try {
-                        File file = new File(Environment.getExternalStorageDirectory()+"/len" + number  +".jpg");
-                        number += 1;
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
-                    }
                 }
             }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void saveImage(Image image, String name) throws IOException {
+        Log.i(TAG, "in saveImage()");
+        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+        byte[] bytes = new byte[buffer.capacity()];
+        buffer.get(bytes);
+        OutputStream output = null;
+        try {
+            Log.i(TAG, "Saved in " + Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
+            File file = new File(Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
+            output = new FileOutputStream(file);
+            output.write(bytes);
+        } finally {
+            if (null != output) {
+                output.close();
+            }
         }
     }
 
@@ -241,21 +243,24 @@ public class CameraAPI {
             ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, 1);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
-            final ArrayList<Image> images = new ArrayList<>(1);
 
             outputSurfaces.add(reader.getSurface());
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(reader.getSurface());
 
-            captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
-            captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
+            prepareRequest(captureBuilder, rotation);
 
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
-                    Image image = reader.acquireLatestImage();
-                    images.add(image);
+                    try {
+                        Image image = reader.acquireLatestImage();
+                        String name = "focusDist" + String.format("%.2f", focus);
+                        saveImage(image, name);
+                        image.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
@@ -270,6 +275,7 @@ public class CameraAPI {
                 @Override
                 public void onConfigured(CameraCaptureSession session) {
                     try {
+                        captureBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
                         session.capture(captureBuilder.build(), captureListener, mBackgroundHandler);
                         session.close();
                     } catch (CameraAccessException e) {
@@ -280,36 +286,10 @@ public class CameraAPI {
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
 
-                public void saveImage()
-                {
-                    try {
-                        save(images.get(0));
-                        images.get(0).close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
                 @Override
                 public void onClosed(@NonNull CameraCaptureSession session) {
                     Log.i(TAG, "Session is closed!");
-                    saveImage();
                     createCameraPreview();
-                }
-
-                private void save(Image image) throws IOException {
-                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                    byte[] bytes = new byte[buffer.capacity()];
-                    buffer.get(bytes);
-                    OutputStream output = null;
-                    try {
-                        File file = new File(Environment.getExternalStorageDirectory()+"/focus" + number  +".jpg");
-                        output = new FileOutputStream(file);
-                        output.write(bytes);
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
-                    }
                 }
             }, null);
         } catch (CameraAccessException e) {
@@ -346,7 +326,30 @@ public class CameraAPI {
         }
     }
 
+
+    public void updatePreviewWithManualFocus(float focus) {
+        if(null == mCameraDevice) {
+            Log.e(TAG, "updatePreview error, return");
+        }
+        manualFocus = focus;
+        useManualFocus = true;
+        try {
+            cameraCaptureSessions.stopRepeating();
+            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
+            captureRequestBuilder.set(CaptureRequest.LENS_FOCUS_DISTANCE, focus);
+
+            cameraCaptureSessions.setRepeatingRequest(captureRequestBuilder.build(), null, mBackgroundHandler);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
     protected void updatePreview() {
+        if (useManualFocus) {
+            updatePreviewWithManualFocus(manualFocus);
+            return;
+        }
         if(null == mCameraDevice) {
             Log.e(TAG, "updatePreview error, return");
         }

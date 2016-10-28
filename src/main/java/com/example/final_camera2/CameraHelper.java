@@ -21,6 +21,7 @@ public class CameraHelper {
         this.mContext = mContext;
         setManager();
         setCameraID();
+        printForAllCamerasProperties();
         api = new CameraAPI(mCameraManager, mCameraID);
     }
 
@@ -32,12 +33,8 @@ public class CameraHelper {
         return rotation;
     }
 
-    void getImage() {
+    void getImage(float startFocus, float endFocus, float stepFocus) {
         Log.i(TAG, "In getImage()");
-        float startFocus = 0.7f;
-        float endFocus = 1f;
-        float stepFocus = 0.1f;
-
         api.takePicture(getRotation(), startFocus, endFocus, stepFocus);
     }
 
@@ -113,5 +110,82 @@ public class CameraHelper {
     public void setTextureView(TextureView textureView)
     {
         api.setTextureView(textureView);
+    }
+
+    public void changePreviewFocus(float focus)
+    {
+        api.updatePreviewWithManualFocus(focus);
+    }
+
+    public void printForAllCamerasProperties()
+    {
+        try {
+            String[] cameraList = mCameraManager.getCameraIdList();
+            for (String cameraID : cameraList) {
+
+                printProperties(cameraID);
+            }
+        } catch (CameraAccessException e) {
+            Log.e(TAG,e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void printProperties(String cameraID)
+    {
+        String localTAG = "Properties: ";
+        try {
+            CameraCharacteristics characteristics
+                    = mCameraManager.getCameraCharacteristics(cameraID);
+            Log.d(localTAG, " ====================================== ");
+            Log.d(localTAG, " CAMERA_ID = " + cameraID);
+
+            switch (characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL)) {
+                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY:
+                    Log.d(localTAG, "INFO_SUPPORTED_HARDWARE_LEVEL = " + "INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY");
+                    break;
+                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED:
+                    Log.d(localTAG, "INFO_SUPPORTED_HARDWARE_LEVEL = " + "INFO_SUPPORTED_HARDWARE_LEVEL_LIMITED");
+                    break;
+                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL:
+                    Log.d(localTAG, "INFO_SUPPORTED_HARDWARE_LEVEL = " + "INFO_SUPPORTED_HARDWARE_LEVEL_FULL");
+                    break;
+                case CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_3:
+                    Log.d(localTAG, "INFO_SUPPORTED_HARDWARE_LEVEL = " + "INFO_SUPPORTED_HARDWARE_LEVEL_3");
+                    break;
+            }
+
+            switch (characteristics.get(CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION)) {
+                case CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION_UNCALIBRATED:
+                    Log.d(localTAG, "LENS_INFO_FOCUS_DISTANCE_CALIBRATION = " + "LENS_INFO_FOCUS_DISTANCE_CALIBRATION_UNCALIBRATED");
+                    break;
+                case CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION_APPROXIMATE:
+                    Log.d(localTAG, "LENS_INFO_FOCUS_DISTANCE_CALIBRATION = " + "LENS_INFO_FOCUS_DISTANCE_CALIBRATION_APPROXIMATE");
+                    break;
+                case CameraCharacteristics.LENS_INFO_FOCUS_DISTANCE_CALIBRATION_CALIBRATED:
+                    Log.d(localTAG, "LENS_INFO_FOCUS_DISTANCE_CALIBRATION = " + "LENS_INFO_FOCUS_DISTANCE_CALIBRATION_CALIBRATED");
+                    break;
+            }
+
+            Log.d(localTAG, "LENS_INFO_MINIMUM_FOCUS_DISTANCE = " + characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE));
+
+            Log.d(localTAG, " ====================================== ");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public float getMinFocusForCamera(){
+        float focus = 0f;
+        try {
+            CameraCharacteristics characteristics
+                    = mCameraManager.getCameraCharacteristics(mCameraID);
+
+            focus = characteristics.get(CameraCharacteristics.LENS_INFO_MINIMUM_FOCUS_DISTANCE);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return focus;
     }
 }

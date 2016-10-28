@@ -29,9 +29,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView mTextValue;
     private SeekBar mSeekbar;
     // Focus routine
-    final float MIN_FOCUS_DISTANCE = 0.05f;
-    final float MAX_FOCUS_DISTANCE = 1.f;
-    final float FOCUS_STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
+    private float MIN_FOCUS_DISTANCE = 0f;
+    private float MAX_FOCUS_DISTANCE = 5.f;
+    private float FOCUS_STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
         textureView.setSurfaceTextureListener(textureListener);
 
         cameraHelper = new CameraHelper(this);
+        // Set focus range
+        MAX_FOCUS_DISTANCE = cameraHelper.getMinFocusForCamera();
+        FOCUS_STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
+
         cameraHelper.setTextureView(textureView);
 
         // Add permission for camera and let user grant the permission
@@ -60,7 +64,10 @@ public class MainActivity extends AppCompatActivity {
         takePictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                cameraHelper.getImage();
+                float startFocus = 1f;
+                float endFocus = 10f;
+                float stepFocus = 3f;
+                cameraHelper.getImage(startFocus, endFocus, stepFocus);
             }
         });
 
@@ -77,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         mTextValue = (TextView)findViewById(R.id.textView2);
-        mTextValue.setText(String.format("%.2f", MIN_FOCUS_DISTANCE));
+        mTextValue.setText("AUTO");
 
         mSeekbar = (SeekBar)findViewById(R.id.seekBar_focus_distance);
         mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
@@ -85,7 +92,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress,
                                           boolean fromUser) {
-                mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
+                processChange(seekBar);
+            }
+
+            private void processChange(SeekBar seekBar) {
+                float focus = getCurrentProgress(seekBar);
+                mTextValue.setText(String.format("%.2f", focus));
+                cameraHelper.changePreviewFocus(focus);
             }
 
             @Override
@@ -94,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {
-                mTextValue.setText(String.format("%.2f", getCurrentProgress(seekBar)));
+                processChange(seekBar);
             }
         });
     }
