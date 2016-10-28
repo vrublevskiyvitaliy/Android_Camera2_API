@@ -32,12 +32,8 @@ public class CameraHelper {
         return rotation;
     }
 
-    void getImage() {
+    void getImage(float startFocus, float endFocus, float stepFocus) {
         Log.i(TAG, "In getImage()");
-        float startFocus = 0.7f;
-        float endFocus = 1f;
-        float stepFocus = 0.1f;
-
         api.takePicture(getRotation(), startFocus, endFocus, stepFocus);
     }
 
