@@ -143,12 +143,12 @@ public class CameraAPI {
         }
         try {
             final int numberOfPhotos = (int) ((endFocus - startFocus) / stepFocus) + 1;
-
+            Log.d(TAG, "numberOfPhotos = " + numberOfPhotos);
             Size size = getMaxSize();
             ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, numberOfPhotos);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
-            final ArrayList<Image> images = new ArrayList<>(numberOfPhotos);
+            final ArrayList<Image> images = new ArrayList<Image>(numberOfPhotos);
 
             outputSurfaces.add(reader.getSurface());
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
@@ -160,8 +160,16 @@ public class CameraAPI {
             ImageReader.OnImageAvailableListener readerListener = new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
+                    Log.i(TAG, "recieved Image");
                     Image image = reader.acquireLatestImage();
                     images.add(image);
+                    try {
+                        saveImage(images.get(number), "series" + number);
+                        images.get(number).close();
+                        number += 1;
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
@@ -196,28 +204,11 @@ public class CameraAPI {
                 public void onConfigureFailed(CameraCaptureSession session) {
                 }
 
-                public void saveImages()
-                {
-                    try {
-
-                        for (int i = 0; i < numberOfPhotos; i++)
-                        {
-                            saveImage(images.get(i), "series" + number);
-                            number += 1;
-                            images.get(i).close();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
                 @Override
                 public void onClosed(@NonNull CameraCaptureSession session) {
                     Log.i(TAG, "Session is closed!");
-                    saveImages();
                     createCameraPreview();
                 }
-
-
             }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -252,7 +243,6 @@ public class CameraAPI {
             ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, 1);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
-            final ArrayList<Image> images = new ArrayList<>(1);
 
             outputSurfaces.add(reader.getSurface());
             final CaptureRequest.Builder captureBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);

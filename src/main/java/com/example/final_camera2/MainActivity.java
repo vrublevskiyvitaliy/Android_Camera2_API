@@ -48,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
         textureView.setSurfaceTextureListener(textureListener);
 
         cameraHelper = new CameraHelper(this);
+        // Set focus range
+        MAX_FOCUS_DISTANCE = cameraHelper.getMinFocusForCamera();
+        FOCUS_STEP = (MAX_FOCUS_DISTANCE - MIN_FOCUS_DISTANCE) / 100;
+
         cameraHelper.setTextureView(textureView);
 
         // Add permission for camera and let user grant the permission
@@ -106,8 +110,6 @@ public class MainActivity extends AppCompatActivity {
                 processChange(seekBar);
             }
         });
-
-        MAX_FOCUS_DISTANCE = cameraHelper.getMinFocusForCamera();
     }
 
     private float getCurrentProgress(SeekBar seekBar)
