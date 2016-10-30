@@ -168,8 +168,8 @@ public class CameraAPI {
         try {
             final int numberOfPhotos = (int) ((endFocus - startFocus) / stepFocus) + 1;
             Log.d(TAG, "numberOfPhotos = " + numberOfPhotos);
-            Size size = getMaxSize();
-            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, numberOfPhotos);
+            Size size = getMaxSizeYUV();
+            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, numberOfPhotos);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
             final ArrayList<Image> images = new ArrayList<Image>(numberOfPhotos);
@@ -188,7 +188,7 @@ public class CameraAPI {
                     Image image = reader.acquireLatestImage();
                     images.add(image);
                     try {
-                        saveImage(images.get(number), "series" + number);
+                        saveImageYUV(images.get(number), "series" + number);
                         images.get(number).close();
                         number += 1;
                     } catch (IOException e) {
@@ -239,17 +239,15 @@ public class CameraAPI {
         }
     }
 
-    private void saveImage(Image image, String name) throws IOException {
-        Log.i(TAG, "in saveImage()");
-        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-        byte[] bytes = new byte[buffer.capacity()];
-        buffer.get(bytes);
+    private void saveImageYUV(Image image, String name) throws IOException {
+        Log.i(TAG, "in saveImageYUV()");
+        byte[] jpegData = ImageUtils.imageToByteArray(image);
         OutputStream output = null;
         try {
             Log.i(TAG, "Saved in " + Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
             File file = new File(Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
             output = new FileOutputStream(file);
-            output.write(bytes);
+            output.write(jpegData);
         } finally {
             if (null != output) {
                 output.close();
@@ -285,58 +283,6 @@ public class CameraAPI {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                }
-
-                private void saveImageYUV(Image image, String name) throws IOException {
-                    Log.i(TAG, "in saveImageYUV()");
-                    byte[] jpegData = imageToByteArray(image);
-                    OutputStream output = null;
-                    try {
-                        Log.i(TAG, "Saved in " + Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
-                        File file = new File(Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
-                        output = new FileOutputStream(file);
-                        output.write(jpegData);
-                    } finally {
-                        if (null != output) {
-                            output.close();
-                        }
-                    }
-                }
-
-                public byte[] imageToByteArray(Image image) {
-                    byte[] data = null;
-                    data = NV21toJPEG(
-                                YUV_420_888toNV21(image),
-                                image.getWidth(), image.getHeight());
-
-                    return data;
-                }
-
-                private byte[] YUV_420_888toNV21(Image image) {
-                    byte[] nv21;
-                    ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
-                    ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
-                    ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
-
-                    int ySize = yBuffer.remaining();
-                    int uSize = uBuffer.remaining();
-                    int vSize = vBuffer.remaining();
-
-                    nv21 = new byte[ySize + uSize + vSize];
-
-                    //U and V are swapped
-                    yBuffer.get(nv21, 0, ySize);
-                    vBuffer.get(nv21, ySize, vSize);
-                    uBuffer.get(nv21, ySize + vSize, uSize);
-
-                    return nv21;
-                }
-
-                private byte[] NV21toJPEG(byte[] nv21, int width, int height) {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    YuvImage yuv = new YuvImage(nv21, ImageFormat.NV21, width, height, null);
-                    yuv.compressToJpeg(new Rect(0, 0, width, height), 100, out);
-                    return out.toByteArray();
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
