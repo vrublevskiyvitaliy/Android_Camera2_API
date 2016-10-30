@@ -29,6 +29,9 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.io.ByteArrayOutputStream;
+import android.graphics.YuvImage;
+import android.graphics.Rect;
 
 
 public class CameraAPI {
@@ -118,6 +121,27 @@ public class CameraAPI {
             if (characteristics != null) {
                 jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).
                         getOutputSizes(ImageFormat.JPEG);
+            }
+            if (jpegSizes != null && 0 < jpegSizes.length) {
+                maxSize = new Size(jpegSizes[0].getWidth(), jpegSizes[0].getHeight());
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        return maxSize;
+    }
+
+    protected Size getMaxSizeYUV()
+    {
+        Size maxSize = new Size(640, 480);
+        try {
+
+            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraDevice.getId());
+            Size[] jpegSizes = null;
+            if (characteristics != null) {
+                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).
+                        getOutputSizes(ImageFormat.YUV_420_888);
             }
             if (jpegSizes != null && 0 < jpegSizes.length) {
                 maxSize = new Size(jpegSizes[0].getWidth(), jpegSizes[0].getHeight());
@@ -239,8 +263,8 @@ public class CameraAPI {
             return;
         }
         try {
-            Size size = getMaxSize();
-            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, 1);
+            Size size = getMaxSizeYUV();
+            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, 1);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
 
@@ -256,11 +280,63 @@ public class CameraAPI {
                     try {
                         Image image = reader.acquireLatestImage();
                         String name = "focusDist" + String.format("%.2f", focus);
-                        saveImage(image, name);
+                        saveImageYUV(image, name);
                         image.close();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+                }
+
+                private void saveImageYUV(Image image, String name) throws IOException {
+                    Log.i(TAG, "in saveImageYUV()");
+                    byte[] jpegData = imageToByteArray(image);
+                    OutputStream output = null;
+                    try {
+                        Log.i(TAG, "Saved in " + Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
+                        File file = new File(Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
+                        output = new FileOutputStream(file);
+                        output.write(jpegData);
+                    } finally {
+                        if (null != output) {
+                            output.close();
+                        }
+                    }
+                }
+
+                public byte[] imageToByteArray(Image image) {
+                    byte[] data = null;
+                    data = NV21toJPEG(
+                                YUV_420_888toNV21(image),
+                                image.getWidth(), image.getHeight());
+
+                    return data;
+                }
+
+                private byte[] YUV_420_888toNV21(Image image) {
+                    byte[] nv21;
+                    ByteBuffer yBuffer = image.getPlanes()[0].getBuffer();
+                    ByteBuffer uBuffer = image.getPlanes()[1].getBuffer();
+                    ByteBuffer vBuffer = image.getPlanes()[2].getBuffer();
+
+                    int ySize = yBuffer.remaining();
+                    int uSize = uBuffer.remaining();
+                    int vSize = vBuffer.remaining();
+
+                    nv21 = new byte[ySize + uSize + vSize];
+
+                    //U and V are swapped
+                    yBuffer.get(nv21, 0, ySize);
+                    vBuffer.get(nv21, ySize, vSize);
+                    uBuffer.get(nv21, ySize + vSize, uSize);
+
+                    return nv21;
+                }
+
+                private byte[] NV21toJPEG(byte[] nv21, int width, int height) {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    YuvImage yuv = new YuvImage(nv21, ImageFormat.NV21, width, height, null);
+                    yuv.compressToJpeg(new Rect(0, 0, width, height), 100, out);
+                    return out.toByteArray();
                 }
             };
             reader.setOnImageAvailableListener(readerListener, mBackgroundHandler);
