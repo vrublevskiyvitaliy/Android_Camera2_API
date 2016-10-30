@@ -165,7 +165,7 @@ public class CameraAPI {
             final int numberOfPhotos = (int) ((endFocus - startFocus) / stepFocus) + 1;
             Log.d(TAG, "numberOfPhotos = " + numberOfPhotos);
             Size size = getMaxSizeYUV();
-            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, numberOfPhotos);
+            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, 1);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
             final ArrayList<Image> images = new ArrayList<Image>(numberOfPhotos);
@@ -185,7 +185,6 @@ public class CameraAPI {
                     images.add(image);
                     try {
                         saveImageYUV(images.get(number), "series" + number);
-                        images.get(number).close();
                         number += 1;
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -247,6 +246,7 @@ public class CameraAPI {
         } finally {
             if (null != output) {
                 output.close();
+                image.close();
             }
         }
     }
