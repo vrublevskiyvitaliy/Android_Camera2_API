@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -129,6 +128,27 @@ public class CameraAPI {
         return maxSize;
     }
 
+    protected Size getMaxSizeYUV()
+    {
+        Size maxSize = new Size(640, 480);
+        try {
+
+            CameraCharacteristics characteristics = mCameraManager.getCameraCharacteristics(mCameraDevice.getId());
+            Size[] jpegSizes = null;
+            if (characteristics != null) {
+                jpegSizes = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP).
+                        getOutputSizes(ImageFormat.YUV_420_888);
+            }
+            if (jpegSizes != null && 0 < jpegSizes.length) {
+                maxSize = new Size(jpegSizes[0].getWidth(), jpegSizes[0].getHeight());
+            }
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+
+        return maxSize;
+    }
+
     public void prepareRequest(CaptureRequest.Builder captureBuilder, int rotation) {
         captureBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
         captureBuilder.set(CaptureRequest.CONTROL_AF_MODE , CameraMetadata.CONTROL_AF_MODE_OFF);
@@ -144,8 +164,8 @@ public class CameraAPI {
         try {
             final int numberOfPhotos = (int) ((endFocus - startFocus) / stepFocus) + 1;
             Log.d(TAG, "numberOfPhotos = " + numberOfPhotos);
-            Size size = getMaxSize();
-            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, numberOfPhotos);
+            Size size = getMaxSizeYUV();
+            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, 1);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
             final ArrayList<Image> images = new ArrayList<Image>(numberOfPhotos);
@@ -164,8 +184,7 @@ public class CameraAPI {
                     Image image = reader.acquireLatestImage();
                     images.add(image);
                     try {
-                        saveImage(images.get(number), "series" + number);
-                        images.get(number).close();
+                        saveImageYUV(images.get(number), "series" + number);
                         number += 1;
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -215,20 +234,19 @@ public class CameraAPI {
         }
     }
 
-    private void saveImage(Image image, String name) throws IOException {
-        Log.i(TAG, "in saveImage()");
-        ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-        byte[] bytes = new byte[buffer.capacity()];
-        buffer.get(bytes);
+    private void saveImageYUV(Image image, String name) throws IOException {
+        Log.i(TAG, "in saveImageYUV()");
+        byte[] jpegData = ImageUtils.imageToByteArray(image);
         OutputStream output = null;
         try {
             Log.i(TAG, "Saved in " + Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
             File file = new File(Environment.getExternalStorageDirectory()+"/" + name  +".jpg");
             output = new FileOutputStream(file);
-            output.write(bytes);
+            output.write(jpegData);
         } finally {
             if (null != output) {
                 output.close();
+                image.close();
             }
         }
     }
@@ -239,8 +257,8 @@ public class CameraAPI {
             return;
         }
         try {
-            Size size = getMaxSize();
-            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.JPEG, 1);
+            Size size = getMaxSizeYUV();
+            ImageReader reader = ImageReader.newInstance(size.getWidth(), size.getHeight(), ImageFormat.YUV_420_888, 1);
 
             List<Surface> outputSurfaces = new ArrayList<Surface>(1);
 
@@ -256,7 +274,7 @@ public class CameraAPI {
                     try {
                         Image image = reader.acquireLatestImage();
                         String name = "focusDist" + String.format("%.2f", focus);
-                        saveImage(image, name);
+                        saveImageYUV(image, name);
                         image.close();
                     } catch (IOException e) {
                         e.printStackTrace();
